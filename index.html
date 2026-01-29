@@ -2,86 +2,75 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Glass Miner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glass Empire</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
-            font-family: 'Segoe UI', sans-serif;
-            color: white;
-            overflow: hidden;
-        }
-        .glass-container {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            margin: 20px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.37);
-        }
-        .btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            padding: 15px;
-            border-radius: 15px;
-            color: white;
-            width: 100%;
-            font-size: 1.1rem;
-            margin-top: 15px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.3); }
+        body { background: #0f0f0f; color: white; text-align: center; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        .container { margin-top: 50px; }
+        #crystal { width: 180px; cursor: pointer; transition: transform 0.05s; }
+        #crystal:active { transform: scale(0.95); }
+        .score { font-size: 32px; font-weight: bold; margin: 20px 0; color: #00d4ff; }
     </style>
 </head>
 <body>
-    <div class="glass-container">
-        <h1>💎 Ресурсы: <span id="balance">0</span></h1>
-        <p>Добыча в сек: <span id="perSec">1</span></p>
-        <button class="btn" onclick="mine()">Добыть +1</button>
-    </div>
 
-    <div class="glass-container">
-        <h3>Улучшения</h3>
-        <button class="btn" onclick="upgrade()">Улучшить шахту (Цена: 50)</button>
+    <div class="container">
+        <div class="score">💎 <span id="count">0</span></div>
+        <img id="crystal" src="https://cdn-icons-png.flaticon.com/512/3209/3209943.png" alt="Кристалл">
     </div>
 
     <script>
-        let balance = 0;
-        let power = 1;
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Развернуть на весь экран
 
-        function updateUI() {
-            document.getElementById('balance').innerText = Math.floor(balance);
-            document.getElementById('perSec').innerText = power;
-        }
+        let crystals = 0;
+        // Получаем реальный ID игрока из Telegram
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest';
 
-        function mine() {
-            balance++;
-            updateUI();
-        }
+        const countElement = document.getElementById('count');
 
-        function upgrade() {
-            if (balance >= 50) {
-                balance -= 50;
-                power += 1;
-                updateUI();
+        // 1. Загрузка данных при входе в игру
+        async function loadData() {
+            try {
+                const response = await fetch(`/get-stats?userId=${userId}`);
+                const data = await response.json();
+                crystals = data.crystals || 0;
+                countElement.innerText = crystals;
+            } catch (err) {
+                console.error("Ошибка загрузки данных");
             }
         }
 
-        // Авто-добыча 24/7 (пока приложение открыто)
-        setInterval(() => {
-            balance += power / 10;
-            updateUI();
-        }, 100);
+        // 2. Клик по кристаллу
+        document.getElementById('crystal').onclick = () => {
+            crystals++;
+            countElement.innerText = crystals;
 
-        // Сообщаем Telegram, что приложение готово
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
+            // Сохраняем каждые 10 кликов, чтобы не перегружать сервер
+            if (crystals % 10 === 0) {
+                saveData();
+            }
+        };
+
+        // 3. Функция сохранения данных
+        async function saveData() {
+            try {
+                await fetch('/save-stats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, crystals })
+                });
+            } catch (err) {
+                console.error("Ошибка сохранения данных");
+            }
+        }
+
+        // Сохраняем прогресс, когда игрок закрывает приложение
+        window.addEventListener('beforeunload', saveData);
+
+        // Запускаем загрузку
+        loadData();
     </script>
 </body>
 </html>

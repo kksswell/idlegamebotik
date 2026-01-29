@@ -4,31 +4,61 @@ const path = require('path');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 
-// База данных
+// Настройка базы данных
 const adapter = new FileSync('db.json');
 const db = low(adapter);
+
+// Создаем структуру, если файл пустой
 db.defaults({ users: [] }).write();
 
 const app = express();
+app.use(express.json()); // Позволяет серверу принимать JSON
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Раздача статики
+// Раздача статических файлов (HTML, JS, CSS)
 app.use(express.static(__dirname));
 
-// Маршрут для игры с проверкой пути
-app.get('/', (req, res) => {
-    const indexPath = path.join(__dirname, 'index.html');
-    console.log("Попытка найти index.html по пути:", indexPath);
-    res.sendFile(indexPath, (err) => {
-        if (err) {
-            console.error("Ошибка: Файл index.html не найден в корне проекта!");
-            res.status(404).send("Файл игры не найден на сервере. Проверь структуру папок.");
-        }
-    });
+/**
+ * МАРШРУТЫ ДЛЯ СИНХРОНИЗАЦИИ ИГРОКОВ
+ */
+
+// 1. Получить данные конкретного игрока
+app.get('/get-stats', (req, res) => {
+    const userId = req.query.userId;
+    if (!userId) return res.status(400).json({ error: 'No userId provided' });
+
+    let user = db.get('users').find({ id: userId }).value();
+    
+    // Если игрока еще нет в базе, создаем его с 0 кристаллов
+    if (!user) {
+        user = { id: userId, crystals: 0 };
+        db.get('users').push(user).write();
+        console.log(`Новый игрок зарегистрирован: ${userId}`);
+    }
+    res.json(user);
 });
 
+// 2. Сохранить прогресс конкретного игрока
+app.post('/save-stats', (req, res) => {
+    const { userId, crystals } = req.body;
+    if (!userId) return res.status(400).json({ error: 'No userId' });
+
+    db.get('users')
+      .find({ id: userId })
+      .assign({ crystals: crystals })
+      .write();
+    
+    res.json({ status: 'success' });
+});
+
+// Главная страница игры
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Настройка бота
 bot.start((ctx) => {
-    ctx.reply('💎 Твоя империя ждет!', {
+    ctx.reply('💎 Добро пожаловать! Твой прогресс сохраняется автоматически.', {
         reply_markup: {
             inline_keyboard: [
                 [{ text: "Играть 🎮", web_app: { url: process.env.WEBAPP_URL } }]
@@ -37,12 +67,9 @@ bot.start((ctx) => {
     });
 });
 
-// Запуск бота с обработкой ошибок (чтобы не падал при конфликтах)
-bot.launch()
-    .then(() => console.log('✅ Бот успешно запущен'))
-    .catch((err) => console.error('❌ Ошибка запуска бота:', err.message));
+bot.launch().catch(err => console.error("Ошибка бота:", err));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Сервер активен на порту ${PORT}`);
+    console.log(`Сервер запущен на порту ${PORT}`);
 });
