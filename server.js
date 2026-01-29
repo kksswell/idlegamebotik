@@ -1,30 +1,40 @@
 const { Telegraf } = require('telegraf');
+const express = require('express');
+const path = require('path');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 
-// Создаем "карманную" базу данных в файле db.json
+// Настройка базы данных
 const adapter = new FileSync('db.json');
 const db = low(adapter);
-
-// Настройки базы по умолчанию
 db.defaults({ users: [] }).write();
 
-const bot = new Telegraf('8203951929:AAHbgEcIP_7vzOIwis_2bt9280sQfAUqpRk');
+const app = express();
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-bot.start((ctx) => {
-  const userId = ctx.from.id;
-  
-  // Проверяем, есть ли игрок в базе
-  const user = db.get('users').find({ id: userId }).value();
-  if (!user) {
-    db.get('users').push({ id: userId, balance: 0, level: 1 }).write();
-  }
+// Раздача статики (твоей игры)
+app.use(express.static(__dirname));
 
-  ctx.reply('Твоя стеклянная империя ждет!', {
-    reply_markup: {
-      inline_keyboard: [[{ text: "Играть", web_app: { url: 'https://idlegamebotik.onrender.com' } }]]
-    }
-  });
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-bot.launch();
+// Команда старт
+bot.start((ctx) => {
+    ctx.reply('💎 Добро пожаловать в Glass Empire!', {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: "Играть 🎮", web_app: { url: process.env.WEBAPP_URL } }]
+            ]
+        }
+    });
+});
+
+// Запуск бота
+bot.launch().then(() => console.log('Бот успешно запущен'));
+
+// ВАЖНО: Привязка порта для Render
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Сервер слушает порт ${PORT}`);
+});
