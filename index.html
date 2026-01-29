@@ -3,111 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Liquid Glass: Cloud Save</title>
+    <title>Glass Clicker Cloud</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --glass: rgba(255, 255, 255, 0.1);
-            --border: rgba(255, 255, 255, 0.2);
-            --accent: #00d4ff;
-        }
-
+        :root { --glass: rgba(255, 255, 255, 0.1); --border: rgba(255, 255, 255, 0.2); --accent: #00d4ff; }
         body {
-            margin: 0; padding: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
-            color: white; height: 100vh;
-            display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at center, #1b2735 0%, #000 100%);
+            color: white; height: 100vh; display: flex; flex-direction: column; align-items: center;
             overflow: hidden; user-select: none;
         }
-
-        header { margin-top: 30px; text-align: center; }
-
+        header { margin-top: 25px; text-align: center; }
         .balance-card {
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            padding: 15px 40px; border-radius: 20px;
-            border: 1px solid var(--border);
+            background: var(--glass); backdrop-filter: blur(15px);
+            padding: 15px 40px; border-radius: 20px; border: 1px solid var(--border);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
-
-        #crystal-count { margin: 0; font-size: 36px; color: var(--accent); }
-
-        .click-area {
-            flex-grow: 1; display: flex; 
-            justify-content: center; align-items: center;
-            width: 100%; position: relative;
-        }
-
+        #crystal-count { margin: 0; font-size: 38px; color: var(--accent); }
+        .click-zone { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; position: relative; }
         #main-diamond {
-            width: 250px; height: 250px;
-            cursor: pointer; transition: transform 0.05s ease;
-            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.4));
-            object-fit: contain;
+            width: 250px; height: 250px; cursor: pointer; transition: transform 0.05s ease;
+            filter: drop-shadow(0 0 25px rgba(0, 212, 255, 0.4)); object-fit: contain;
         }
-
-        #main-diamond:active { transform: scale(0.9); }
-
-        .floating-number {
-            position: absolute; color: var(--accent);
-            font-weight: bold; font-size: 28px;
-            pointer-events: none;
-            animation: floatUp 0.7s ease-out forwards;
+        #main-diamond:active { transform: scale(0.92); }
+        .floating-num {
+            position: absolute; color: var(--accent); font-weight: bold; font-size: 26px;
+            pointer-events: none; animation: floatUp 0.7s ease-out forwards;
         }
-
         @keyframes floatUp {
             0% { transform: translateY(0); opacity: 1; }
             100% { transform: translateY(-120px); opacity: 0; }
         }
-
         .shop {
-            width: 100%; background: var(--glass);
-            backdrop-filter: blur(20px); border-radius: 30px 30px 0 0;
-            padding: 20px; border-top: 1px solid var(--border);
-            box-sizing: border-box;
+            width: 100%; background: var(--glass); backdrop-filter: blur(20px);
+            border-radius: 30px 30px 0 0; padding: 20px; border-top: 1px solid var(--border); box-sizing: border-box;
         }
-
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-        .item {
-            background: rgba(0,0,0,0.3); padding: 15px; 
-            border-radius: 15px; border: 1px solid var(--border); 
-            text-align: center;
-        }
-
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; border: 1px solid var(--border); text-align: center; }
         .btn {
-            background: var(--accent); border: none; 
-            color: black; padding: 10px; border-radius: 8px; 
-            font-weight: bold; width: 100%; margin-top: 10px; 
-            cursor: pointer;
+            background: var(--accent); border: none; color: black; padding: 10px;
+            border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px;
         }
-
-        .btn:disabled { background: #444; color: #888; }
+        #save-indicator { position: fixed; top: 10px; right: 10px; font-size: 10px; color: #555; }
     </style>
 </head>
 <body>
 
+    <div id="save-indicator">Синхронизация...</div>
+
     <header>
         <div class="balance-card">
             <h2 id="crystal-count">0</h2>
-            <small id="per-click">Мощь клика: +1</small>
+            <small id="per-click">Клик: +1</small>
         </div>
     </header>
 
-    <div class="click-area">
+    <div class="click-zone">
         <img id="main-diamond" src="https://image2url.com/r2/default/images/1769706125563-0312dc87-2336-44b7-83f2-62c148885cf1.png">
     </div>
 
     <div class="shop">
         <div class="shop-grid">
-            <div class="item">
+            <div class="card">
                 <span>Кирка (Ур. <span id="lvl">1</span>)</span>
-                <button class="btn" onclick="upgrade()">Улучшить: <span id="cost">50</span></button>
+                <button class="btn" onclick="buyUpgrade()">Улучшить: <span id="cost">50</span></button>
             </div>
-            <div class="item">
+            <div class="card">
                 <span>Питомец</span>
-                <button class="btn" id="btn-pet" onclick="buyPet()">Купить: 500</button>
-                <div id="pet-active" style="display:none; color:#00ffaa; font-size:11px; margin-top:5px;">🐱 Активен (+2/с)</div>
+                <button class="btn" id="pet-btn" onclick="buyPet()">Купить: 500</button>
+                <div id="pet-status" style="display:none; color:#00ffaa; font-size:11px; margin-top:5px;">🐾 Активен (+2/с)</div>
             </div>
         </div>
     </div>
@@ -115,58 +79,62 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'local_dev';
 
         let crystals = 0;
         let pickaxeLevel = 1;
         let hasPet = false;
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest_user';
+        let isDirty = false; // Флаг: изменились ли данные
 
-        // ЗАГРУЗКА ИЗ МОНГО
-        async function load() {
+        async function init() {
             try {
-                const r = await fetch(`/get-stats?userId=${userId}`);
-                const d = await r.json();
-                crystals = d.crystals || 0;
-                pickaxeLevel = d.pickaxeLevel || 1;
-                hasPet = d.hasPet || false;
+                // Добавляем timestamp, чтобы избежать кэширования браузером
+                const res = await fetch(`/get-stats?userId=${userId}&v=${Date.now()}`);
+                const data = await res.json();
+                crystals = data.crystals || 0;
+                pickaxeLevel = data.pickaxeLevel || 1;
+                hasPet = data.hasPet || false;
                 updateUI();
-            } catch(e) { console.error("Ошибка загрузки"); }
+                document.getElementById('save-indicator').innerText = 'Облако подключено';
+            } catch(e) { 
+                document.getElementById('save-indicator').innerText = 'Ошибка сети';
+            }
         }
 
         function updateUI() {
             document.getElementById('crystal-count').innerText = Math.floor(crystals);
-            document.getElementById('per-click').innerText = `Мощь клика: +${pickaxeLevel}`;
+            document.getElementById('per-click').innerText = `Клик: +${pickaxeLevel}`;
             document.getElementById('lvl').innerText = pickaxeLevel;
             document.getElementById('cost').innerText = pickaxeLevel * 50;
             if(hasPet) {
-                document.getElementById('btn-pet').style.display = 'none';
-                document.getElementById('pet-active').style.display = 'block';
+                document.getElementById('pet-btn').style.display = 'none';
+                document.getElementById('pet-status').style.display = 'block';
             }
         }
 
         document.getElementById('main-diamond').onclick = (e) => {
             crystals += pickaxeLevel;
-            spawnText(e.clientX, e.clientY, `+${pickaxeLevel}`);
+            isDirty = true;
+            showAnim(e.clientX, e.clientY, `+${pickaxeLevel}`);
             updateUI();
-            if(crystals % 10 === 0) save();
         };
 
-        function spawnText(x, y, text) {
+        function showAnim(x, y, txt) {
             const el = document.createElement('div');
-            el.className = 'floating-number';
-            el.innerText = text;
-            el.style.left = `${x}px`; el.style.top = `${y}px`;
+            el.className = 'floating-num';
+            el.style.left = x + 'px'; el.style.top = y + 'px';
+            el.innerText = txt;
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 700);
         }
 
-        function upgrade() {
+        function buyUpgrade() {
             let price = pickaxeLevel * 50;
             if(crystals >= price) {
                 crystals -= price;
                 pickaxeLevel++;
+                isDirty = true;
                 updateUI();
-                save();
             }
         }
 
@@ -174,32 +142,35 @@
             if(crystals >= 500 && !hasPet) {
                 crystals -= 500;
                 hasPet = true;
+                isDirty = true;
                 updateUI();
-                save();
             }
         }
 
-        // Пассивный доход
+        // Авто-доход
         setInterval(() => {
-            if(hasPet) {
-                crystals += 2;
-                updateUI();
-            }
+            if(hasPet) { crystals += 2; isDirty = true; updateUI(); }
         }, 1000);
 
-        // СОХРАНЕНИЕ В МОНГО
-        async function save() {
+        // ФОНОВОЕ СОХРАНЕНИЕ: каждые 2 секунды, если были изменения
+        async function syncWithCloud() {
+            if(!isDirty) return;
+            document.getElementById('save-indicator').innerText = 'Сохранение...';
             try {
                 await fetch('/save-stats', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ userId, crystals, pickaxeLevel, hasPet })
                 });
-            } catch(e) { console.error("Ошибка сохранения"); }
+                isDirty = false;
+                document.getElementById('save-indicator').innerText = 'Сохранено';
+            } catch(e) {
+                document.getElementById('save-indicator').innerText = 'Ошибка сохранения';
+            }
         }
+        setInterval(syncWithCloud, 2000);
 
-        window.addEventListener('beforeunload', save);
-        load();
+        init();
     </script>
 </body>
 </html>
