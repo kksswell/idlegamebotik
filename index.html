@@ -3,172 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Glass Clicker Cloud</title>
+    <title>Diamond Empire v3</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --glass: rgba(255, 255, 255, 0.1); --border: rgba(255, 255, 255, 0.2); --accent: #00d4ff; }
-        body {
-            margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif;
-            background: radial-gradient(circle at center, #1b2735 0%, #000 100%);
-            color: white; height: 100vh; display: flex; flex-direction: column; align-items: center;
-            overflow: hidden; user-select: none;
-        }
-        header { margin-top: 25px; text-align: center; }
-        .balance-card {
-            background: var(--glass); backdrop-filter: blur(15px);
-            padding: 15px 40px; border-radius: 20px; border: 1px solid var(--border);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        }
-        #crystal-count { margin: 0; font-size: 38px; color: var(--accent); }
-        .click-zone { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; position: relative; }
-        #main-diamond {
-            width: 250px; height: 250px; cursor: pointer; transition: transform 0.05s ease;
-            filter: drop-shadow(0 0 25px rgba(0, 212, 255, 0.4)); object-fit: contain;
-        }
-        #main-diamond:active { transform: scale(0.92); }
-        .floating-num {
-            position: absolute; color: var(--accent); font-weight: bold; font-size: 26px;
-            pointer-events: none; animation: floatUp 0.7s ease-out forwards;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-120px); opacity: 0; }
-        }
-        .shop {
-            width: 100%; background: var(--glass); backdrop-filter: blur(20px);
-            border-radius: 30px 30px 0 0; padding: 20px; border-top: 1px solid var(--border); box-sizing: border-box;
-        }
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .card { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; border: 1px solid var(--border); text-align: center; }
-        .btn {
-            background: var(--accent); border: none; color: black; padding: 10px;
-            border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px;
-        }
-        #save-indicator { position: fixed; top: 10px; right: 10px; font-size: 10px; color: #555; }
+        :root { --glass: rgba(255, 255, 255, 0.1); --accent: #00d4ff; --border: rgba(255,255,255,0.1); }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #050505; color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Таб-бар */
+        .nav { display: flex; background: #000; border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; z-index: 100; }
+        .nav-item { flex: 1; padding: 15px; text-align: center; font-size: 11px; opacity: 0.5; cursor: pointer; }
+        .nav-item.active { opacity: 1; color: var(--accent); border-top: 2px solid var(--accent); }
+
+        .page { display: none; flex-direction: column; align-items: center; padding: 20px; flex: 1; overflow-y: auto; padding-bottom: 80px; }
+        .page.active { display: flex; }
+
+        .balance { text-align: center; margin: 20px 0; }
+        #crystals { font-size: 48px; margin: 0; color: var(--accent); text-shadow: 0 0 20px rgba(0,212,255,0.3); }
+
+        /* Кликер */
+        .diamond-container { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; }
+        #diamond-img { width: 220px; cursor: pointer; transition: 0.05s; }
+        #diamond-img:active { transform: scale(0.95); }
+
+        /* Карточки */
+        .card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 20px; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; margin-top: 10px; }
+        .btn:disabled { background: #333; color: #666; }
+
+        /* Стадии */
+        .stage { opacity: 0.3; filter: grayscale(1); transition: 0.3s; }
+        .stage.unlocked { opacity: 1; filter: grayscale(0); border: 1px solid var(--accent); }
+
+        .floating-val { position: absolute; color: var(--accent); font-weight: bold; animation: float 0.7s forwards; pointer-events: none; }
+        @keyframes float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
+        
+        #boost-timer { font-size: 12px; color: #ffcc00; margin-top: 5px; display: none; }
     </style>
 </head>
 <body>
 
-    <div id="save-indicator">Синхронизация...</div>
-
-    <header>
-        <div class="balance-card">
-            <h2 id="crystal-count">0</h2>
-            <small id="per-click">Клик: +1</small>
+    <div id="p-game" class="page active">
+        <div class="balance">
+            <div id="league-tag" style="font-size: 12px; letter-spacing: 1px; color: #888;">БРОНЗА</div>
+            <h1 id="crystals">0</h1>
+            <div id="boost-timer">🚀 Буст активен: <span id="b-time">0</span>c</div>
         </div>
-    </header>
-
-    <div class="click-zone">
-        <img id="main-diamond" src="https://image2url.com/r2/default/images/1769706125563-0312dc87-2336-44b7-83f2-62c148885cf1.png">
+        <div class="diamond-container">
+            <img id="diamond-img" src="https://image2url.com/r2/default/images/1769706125563-0312dc87-2336-44b7-83f2-62c148885cf1.png">
+        </div>
     </div>
 
-    <div class="shop">
-        <div class="shop-grid">
-            <div class="card">
-                <span>Кирка (Ур. <span id="lvl">1</span>)</span>
-                <button class="btn" onclick="buyUpgrade()">Улучшить: <span id="cost">50</span></button>
-            </div>
-            <div class="card">
-                <span>Питомец</span>
-                <button class="btn" id="pet-btn" onclick="buyPet()">Купить: 500</button>
-                <div id="pet-status" style="display:none; color:#00ffaa; font-size:11px; margin-top:5px;">🐾 Активен (+2/с)</div>
-            </div>
+    <div id="p-shop" class="page">
+        <h2>Магазин</h2>
+        <div class="card">
+            <h3>⛏️ Уровень Кирки: <span id="p-lvl">1</span></h3>
+            <button class="btn" onclick="buyPick()">Улучшить за <span id="p-cost">50</span> 💎</button>
         </div>
+        <div class="card">
+            <h3>🚀 Буст дохода (x5)</h3>
+            <p>Действует 60 секунд</p>
+            <button class="btn" onclick="buyBoost()">Купить за 1000 💎</button>
+        </div>
+        <div class="card">
+            <h3>🐾 Питомец-автокликер</h3>
+            <button class="btn" id="pet-btn" onclick="buyPet()">Купить за 5000 💎</button>
+        </div>
+    </div>
+
+    <div id="p-stages" class="page">
+        <h2>Стадии коллекции</h2>
+        <div id="s-bronze" class="card stage unlocked">
+            <h3>📦 Бронзовая стадия</h3>
+            <p>Доступно: Добыча начата</p>
+        </div>
+        <div id="s-silver" class="card stage">
+            <h3>🥈 Серебряная стадия</h3>
+            <p>Нужно 10,000 всего добыто</p>
+        </div>
+        <div id="s-gold" class="card stage">
+            <h3>🥇 Золотая стадия</h3>
+            <p>Нужно 100,000 всего добыто</p>
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item active" onclick="showPage('p-game', this)">💎 Игра</div>
+        <div class="nav-item" onclick="showPage('p-shop', this)">🛒 Магазин</div>
+        <div class="nav-item" onclick="showPage('p-stages', this)">🏆 Стадии</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'local_dev';
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'tester';
 
-        let crystals = 0;
-        let pickaxeLevel = 1;
-        let hasPet = false;
-        let isDirty = false; // Флаг: изменились ли данные
+        let crystals = 0, totalCrystals = 0, pickaxeLevel = 1, hasPet = false;
+        let multiplier = 1, boostUntil = 0;
 
         async function init() {
-            try {
-                // Добавляем timestamp, чтобы избежать кэширования браузером
-                const res = await fetch(`/get-stats?userId=${userId}&v=${Date.now()}`);
-                const data = await res.json();
-                crystals = data.crystals || 0;
-                pickaxeLevel = data.pickaxeLevel || 1;
-                hasPet = data.hasPet || false;
-                updateUI();
-                document.getElementById('save-indicator').innerText = 'Облако подключено';
-            } catch(e) { 
-                document.getElementById('save-indicator').innerText = 'Ошибка сети';
-            }
+            const res = await fetch(`/get-stats?userId=${userId}&v=${Date.now()}`);
+            const data = await res.json();
+            crystals = data.crystals;
+            totalCrystals = data.totalCrystals || 0;
+            pickaxeLevel = data.pickaxeLevel;
+            hasPet = data.hasPet;
+            multiplier = data.multiplier || 1;
+            boostUntil = data.boostUntil || 0;
+            updateUI();
         }
 
         function updateUI() {
-            document.getElementById('crystal-count').innerText = Math.floor(crystals);
-            document.getElementById('per-click').innerText = `Клик: +${pickaxeLevel}`;
-            document.getElementById('lvl').innerText = pickaxeLevel;
-            document.getElementById('cost').innerText = pickaxeLevel * 50;
-            if(hasPet) {
-                document.getElementById('pet-btn').style.display = 'none';
-                document.getElementById('pet-status').style.display = 'block';
-            }
+            document.getElementById('crystals').innerText = Math.floor(crystals);
+            document.getElementById('p-lvl').innerText = pickaxeLevel;
+            document.getElementById('p-cost').innerText = pickaxeLevel * 50;
+            
+            // Проверка стадий
+            if(totalCrystals >= 10000) document.getElementById('s-silver').classList.add('unlocked');
+            if(totalCrystals >= 100000) document.getElementById('s-gold').classList.add('unlocked');
+
+            if(hasPet) document.getElementById('pet-btn').innerText = "Куплено";
+            
+            // Тэг лиги
+            let tag = "БРОНЗА";
+            if(totalCrystals >= 10000) tag = "СЕРЕБРО";
+            if(totalCrystals >= 100000) tag = "ЗОЛОТО";
+            document.getElementById('league-tag').innerText = tag;
         }
 
-        document.getElementById('main-diamond').onclick = (e) => {
-            crystals += pickaxeLevel;
-            isDirty = true;
-            showAnim(e.clientX, e.clientY, `+${pickaxeLevel}`);
+        document.getElementById('diamond-img').onclick = (e) => {
+            let gain = pickaxeLevel * multiplier;
+            crystals += gain;
+            totalCrystals += gain;
             updateUI();
+            
+            const f = document.createElement('div');
+            f.className = 'floating-val';
+            f.innerText = "+" + gain;
+            f.style.left = e.clientX + 'px'; f.style.top = e.clientY + 'px';
+            document.body.appendChild(f);
+            setTimeout(() => f.remove(), 700);
         };
 
-        function showAnim(x, y, txt) {
-            const el = document.createElement('div');
-            el.className = 'floating-num';
-            el.style.left = x + 'px'; el.style.top = y + 'px';
-            el.innerText = txt;
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 700);
+        function showPage(id, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
         }
 
-        function buyUpgrade() {
-            let price = pickaxeLevel * 50;
-            if(crystals >= price) {
-                crystals -= price;
-                pickaxeLevel++;
-                isDirty = true;
+        function buyPick() {
+            let cost = pickaxeLevel * 50;
+            if(crystals >= cost) { crystals -= cost; pickaxeLevel++; updateUI(); save(); }
+        }
+
+        function buyBoost() {
+            if(crystals >= 1000) {
+                crystals -= 1000;
+                multiplier = 5;
+                boostUntil = Date.now() + 60000;
                 updateUI();
+                save();
             }
         }
 
         function buyPet() {
-            if(crystals >= 500 && !hasPet) {
-                crystals -= 500;
+            if(crystals >= 5000 && !hasPet) {
+                crystals -= 5000;
                 hasPet = true;
-                isDirty = true;
                 updateUI();
+                save();
             }
         }
 
-        // Авто-доход
+        // Логика буста и автокликера
         setInterval(() => {
-            if(hasPet) { crystals += 2; isDirty = true; updateUI(); }
+            let changed = false;
+            if(boostUntil > Date.now()) {
+                document.getElementById('boost-timer').style.display = 'block';
+                document.getElementById('b-time').innerText = Math.round((boostUntil - Date.now())/1000);
+            } else {
+                if(multiplier > 1) { multiplier = 1; changed = true; }
+                document.getElementById('boost-timer').style.display = 'none';
+            }
+
+            if(hasPet) { crystals += 2 * multiplier; totalCrystals += 2 * multiplier; changed = true; }
+            if(changed) updateUI();
         }, 1000);
 
-        // ФОНОВОЕ СОХРАНЕНИЕ: каждые 2 секунды, если были изменения
-        async function syncWithCloud() {
-            if(!isDirty) return;
-            document.getElementById('save-indicator').innerText = 'Сохранение...';
-            try {
-                await fetch('/save-stats', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ userId, crystals, pickaxeLevel, hasPet })
-                });
-                isDirty = false;
-                document.getElementById('save-indicator').innerText = 'Сохранено';
-            } catch(e) {
-                document.getElementById('save-indicator').innerText = 'Ошибка сохранения';
-            }
+        async function save() {
+            fetch('/save-stats', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId, crystals, totalCrystals, pickaxeLevel, hasPet, multiplier, boostUntil })
+            });
         }
-        setInterval(syncWithCloud, 2000);
+        setInterval(save, 5000); // Автосохранение каждые 5 сек
 
         init();
     </script>
