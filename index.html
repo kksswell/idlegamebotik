@@ -1,54 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glass Empire</title>
+    <title>Жидкое Стекло</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #121212; color: #00d4ff; text-align: center; font-family: 'Arial', sans-serif; }
-        .stat-box { font-size: 28px; margin: 30px; padding: 10px; border: 2px solid #00d4ff; display: inline-block; border-radius: 15px; }
-        #crystal { width: 200px; cursor: pointer; filter: drop-shadow(0 0 10px #00d4ff); transition: 0.1s; }
-        #crystal:active { transform: scale(0.9); }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Более яркий градиент */
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+        }
+        .score-board {
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0,212,255,0.8);
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            margin: 10px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .diamond-container {
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .diamond-container:active {
+            transform: scale(0.9);
+        }
+        /* Используем иконку кристалла, так как ссылка на imgur может не работать напрямую */
+        .diamond {
+            width: 150px;
+            height: 150px;
+            background: url('https://cdn-icons-png.flaticon.com/512/3209/3209943.png') no-repeat center center;
+            background-size: contain;
+            margin: 0 auto;
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.5));
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .button:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
     </style>
 </head>
 <body>
-    <div class="stat-box">💎 Кристаллы: <span id="count">0</span></div>
-    <br>
-    <img id="crystal" src="https://cdn-icons-png.flaticon.com/512/3209/3209943.png">
+    <header>
+        <h1>Жидкое Стекло</h1>
+        <div class="score-board">💎 Кристаллы: <span id="count">0</span></div>
+        <div class="diamond-container" id="click-zone">
+            <div class="diamond"></div>
+        </div>
+    </header>
+
+    <div class="glass">
+        <h3>Улучшения</h3>
+        <button class="button" onclick="alert('Скоро!')">Буст 1</button>
+        <button class="button" onclick="alert('Скоро!')">Буст 2</button>
+        <button class="button" onclick="alert('В разработке')">Лидерборд</button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
         let crystals = 0;
-        // Получаем уникальный ID от Телеграма
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest_user';
+        // Получаем ID пользователя
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest';
 
-        async function load() {
-            const res = await fetch(`/get-stats?userId=${userId}`);
-            const data = await res.json();
-            crystals = data.crystals || 0;
-            document.getElementById('count').innerText = crystals;
+        // Загрузка данных
+        async function loadStats() {
+            try {
+                const res = await fetch(`/get-stats?userId=${userId}`);
+                const data = await res.json();
+                crystals = data.crystals || 0;
+                document.getElementById('count').innerText = crystals;
+            } catch (e) {
+                console.error("Ошибка загрузки данных");
+            }
         }
 
-        async function save() {
-            await fetch('/save-stats', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, crystals })
-            });
-        }
-
-        document.getElementById('crystal').onclick = () => {
+        // Клик по кристаллу
+        document.getElementById('click-zone').onclick = () => {
             crystals++;
             document.getElementById('count').innerText = crystals;
-            if (crystals % 10 === 0) save(); // Сохраняем каждые 10 кликов
+            
+            // Сохраняем каждые 10 кликов
+            if (crystals % 10 === 0) saveStats();
         };
 
-        // Сохраняем при выходе
-        window.addEventListener('beforeunload', save);
-        load();
+        // Сохранение данных
+        async function saveStats() {
+            try {
+                await fetch('/save-stats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, crystals })
+                });
+            } catch (e) {
+                console.error("Ошибка сохранения");
+            }
+        }
+
+        // Автосохранение при закрытии
+        window.addEventListener('beforeunload', saveStats);
+
+        // Инициализация
+        loadStats();
     </script>
 </body>
 </html>
