@@ -12,14 +12,15 @@ db.defaults({ users: [] }).write();
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Раздача статики (твоей игры)
+// Указываем серверу, что файлы лежат в той же папке, что и этот скрипт
 app.use(express.static(__dirname));
 
+// Главный маршрут, который отдаёт твою игру
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Команда старт
+// Обработка команды /start в Telegram
 bot.start((ctx) => {
     ctx.reply('💎 Добро пожаловать в Glass Empire!', {
         reply_markup: {
@@ -31,10 +32,10 @@ bot.start((ctx) => {
 });
 
 // Запуск бота
-bot.launch().then(() => console.log('Бот успешно запущен'));
+bot.launch().then(() => console.log('Бот запущен!'));
 
-// ВАЖНО: Привязка порта для Render
+// ВАЖНО: Порт для Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Сервер слушает порт ${PORT}`);
+    console.log(`Сервер работает на порту ${PORT}`);
 });
