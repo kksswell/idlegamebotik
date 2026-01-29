@@ -40,7 +40,6 @@
             width: 100%; position: relative;
         }
 
-        /* ТВОЙ НОВЫЙ АЛМАЗ ПО ОБНОВЛЕННОЙ ССЫЛКЕ */
         #main-diamond {
             width: 260px;
             height: 260px;
@@ -127,35 +126,46 @@
         let crystals = 0;
         let pickaxeLevel = 1;
         let hasPet = false;
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest';
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest_dev';
 
-        async function load() {
+        // 1. ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА ПРИ СТАРТЕ
+        async function loadData() {
             try {
-                const r = await fetch(`/get-stats?userId=${userId}`);
-                const d = await r.json();
-                crystals = d.crystals || 0;
-                pickaxeLevel = d.pickaxeLevel || 1;
-                hasPet = d.hasPet || false;
-                update();
-            } catch(e) { console.error("Error loading data"); }
+                const response = await fetch(`/get-stats?userId=${userId}`);
+                const data = await response.json();
+                
+                // Присваиваем значения из базы
+                crystals = data.crystals || 0;
+                pickaxeLevel = data.pickaxeLevel || 1;
+                hasPet = data.hasPet || false;
+                
+                updateUI();
+                console.log("Данные загружены:", data);
+            } catch(e) {
+                console.error("Ошибка загрузки:", e);
+            }
         }
 
-        function update() {
+        function updateUI() {
             document.getElementById('crystal-count').innerText = Math.floor(crystals);
             document.getElementById('per-click').innerText = `Клик: +${pickaxeLevel}`;
             document.getElementById('lvl').innerText = pickaxeLevel;
             document.getElementById('cost').innerText = pickaxeLevel * 50;
+            
             if(hasPet) {
                 document.getElementById('up-pet').style.display = 'none';
                 document.getElementById('pet-status').style.display = 'block';
             }
         }
 
+        // Клик
         document.getElementById('main-diamond').onclick = (e) => {
             crystals += pickaxeLevel;
             spawnText(e.clientX, e.clientY, `+${pickaxeLevel}`);
-            update();
-            if(crystals % 10 === 0) save();
+            updateUI();
+            
+            // Сохраняем каждый 10-й клик автоматически
+            if(crystals % 10 === 0) saveData();
         };
 
         function spawnText(x, y, text) {
@@ -172,8 +182,8 @@
             if(crystals >= price) {
                 crystals -= price;
                 pickaxeLevel++;
-                update();
-                save();
+                updateUI();
+                saveData();
             }
         }
 
@@ -181,25 +191,42 @@
             if(crystals >= 500 && !hasPet) {
                 crystals -= 500;
                 hasPet = true;
-                update();
-                save();
+                updateUI();
+                saveData();
             }
         }
 
+        // Авто-доход
         setInterval(() => {
-            if(hasPet) { crystals += 2; update(); }
+            if(hasPet) {
+                crystals += 2;
+                updateUI();
+            }
         }, 1000);
 
-        async function save() {
-            await fetch('/save-stats', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ userId, crystals, pickaxeLevel, hasPet })
-            });
+        // 2. ФУНКЦИЯ СОХРАНЕНИЯ
+        async function saveData() {
+            try {
+                await fetch('/save-stats', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        userId, 
+                        crystals, 
+                        pickaxeLevel, 
+                        hasPet 
+                    })
+                });
+            } catch(e) {
+                console.error("Ошибка сохранения:", e);
+            }
         }
 
-        window.addEventListener('beforeunload', save);
-        load();
+        // Сохранение при выходе
+        window.addEventListener('beforeunload', saveData);
+        
+        // Запуск
+        loadData();
     </script>
 </body>
 </html>
