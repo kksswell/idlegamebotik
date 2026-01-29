@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Liquid Glass Clicker: Cloud Edition</title>
+    <title>Liquid Glass: Cloud Save</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -14,7 +14,7 @@
 
         body {
             margin: 0; padding: 0;
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
             color: white; height: 100vh;
             display: flex; flex-direction: column; align-items: center;
@@ -26,34 +26,30 @@
         .balance-card {
             background: var(--glass);
             backdrop-filter: blur(15px);
-            padding: 15px 40px;
-            border-radius: 20px;
+            padding: 15px 40px; border-radius: 20px;
             border: 1px solid var(--border);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
 
-        #crystal-count { margin: 0; font-size: 36px; color: var(--accent); font-weight: bold; }
+        #crystal-count { margin: 0; font-size: 36px; color: var(--accent); }
 
         .click-area {
-            flex-grow: 1;
-            display: flex; justify-content: center; align-items: center;
+            flex-grow: 1; display: flex; 
+            justify-content: center; align-items: center;
             width: 100%; position: relative;
         }
 
         #main-diamond {
-            width: 250px;
-            height: 250px;
-            cursor: pointer;
-            transition: transform 0.05s ease;
-            filter: drop-shadow(0 0 25px rgba(0, 212, 255, 0.4));
+            width: 250px; height: 250px;
+            cursor: pointer; transition: transform 0.05s ease;
+            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.4));
             object-fit: contain;
         }
 
-        #main-diamond:active { transform: scale(0.92); }
+        #main-diamond:active { transform: scale(0.9); }
 
         .floating-number {
-            position: absolute;
-            color: var(--accent);
+            position: absolute; color: var(--accent);
             font-weight: bold; font-size: 28px;
             pointer-events: none;
             animation: floatUp 0.7s ease-out forwards;
@@ -61,39 +57,32 @@
 
         @keyframes floatUp {
             0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-130px); opacity: 0; }
+            100% { transform: translateY(-120px); opacity: 0; }
         }
 
         .shop {
-            width: 100%;
-            background: var(--glass);
-            backdrop-filter: blur(25px);
-            border-radius: 30px 30px 0 0;
-            padding: 20px;
-            border-top: 1px solid var(--border);
+            width: 100%; background: var(--glass);
+            backdrop-filter: blur(20px); border-radius: 30px 30px 0 0;
+            padding: 20px; border-top: 1px solid var(--border);
             box-sizing: border-box;
         }
 
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         .item {
-            background: rgba(0,0,0,0.4);
-            padding: 15px; border-radius: 18px;
-            border: 1px solid var(--border); text-align: center;
+            background: rgba(0,0,0,0.3); padding: 15px; 
+            border-radius: 15px; border: 1px solid var(--border); 
+            text-align: center;
         }
 
         .btn {
-            background: var(--accent);
-            border: none; color: black; padding: 12px;
-            border-radius: 10px; font-weight: bold; width: 100%;
-            margin-top: 10px; cursor: pointer;
-            transition: 0.2s;
+            background: var(--accent); border: none; 
+            color: black; padding: 10px; border-radius: 8px; 
+            font-weight: bold; width: 100%; margin-top: 10px; 
+            cursor: pointer;
         }
 
-        .btn:active { background: #008eb3; }
         .btn:disabled { background: #444; color: #888; }
-
-        .pet-tag { color: #00ffaa; font-size: 11px; margin-top: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -101,7 +90,7 @@
     <header>
         <div class="balance-card">
             <h2 id="crystal-count">0</h2>
-            <small id="per-click" style="color: #ccc;">Клик: +1</small>
+            <small id="per-click">Мощь клика: +1</small>
         </div>
     </header>
 
@@ -112,13 +101,13 @@
     <div class="shop">
         <div class="shop-grid">
             <div class="item">
-                <span style="font-size: 14px;">⛏️ Кирка (ур. <span id="lvl">1</span>)</span>
-                <button class="btn" id="up-pick" onclick="upgrade()">Апгрейд: <span id="cost">50</span></button>
+                <span>Кирка (Ур. <span id="lvl">1</span>)</span>
+                <button class="btn" onclick="upgrade()">Улучшить: <span id="cost">50</span></button>
             </div>
             <div class="item">
-                <span style="font-size: 14px;">🐱 Питомец</span>
-                <button class="btn" id="up-pet" onclick="buyPet()">Купить: 500</button>
-                <div id="pet-status" class="pet-tag" style="display:none;">🐾 ПРИНОСИТ: +2/с</div>
+                <span>Питомец</span>
+                <button class="btn" id="btn-pet" onclick="buyPet()">Купить: 500</button>
+                <div id="pet-active" style="display:none; color:#00ffaa; font-size:11px; margin-top:5px;">🐱 Активен (+2/с)</div>
             </div>
         </div>
     </div>
@@ -130,46 +119,35 @@
         let crystals = 0;
         let pickaxeLevel = 1;
         let hasPet = false;
-        
-        // Получаем уникальный ID от Telegram
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest_player';
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest_user';
 
-        // Загрузка данных из облака
+        // ЗАГРУЗКА ИЗ МОНГО
         async function load() {
             try {
-                const response = await fetch(`/get-stats?userId=${userId}`);
-                const data = await response.json();
-                
-                crystals = data.crystals || 0;
-                pickaxeLevel = data.pickaxeLevel || 1;
-                hasPet = data.hasPet || false;
-                
+                const r = await fetch(`/get-stats?userId=${userId}`);
+                const d = await r.json();
+                crystals = d.crystals || 0;
+                pickaxeLevel = d.pickaxeLevel || 1;
+                hasPet = d.hasPet || false;
                 updateUI();
-                console.log("Данные из MongoDB загружены");
-            } catch(e) {
-                console.error("Ошибка сети при загрузке");
-            }
+            } catch(e) { console.error("Ошибка загрузки"); }
         }
 
         function updateUI() {
             document.getElementById('crystal-count').innerText = Math.floor(crystals);
-            document.getElementById('per-click').innerText = `Клик: +${pickaxeLevel}`;
+            document.getElementById('per-click').innerText = `Мощь клика: +${pickaxeLevel}`;
             document.getElementById('lvl').innerText = pickaxeLevel;
             document.getElementById('cost').innerText = pickaxeLevel * 50;
-            
             if(hasPet) {
-                document.getElementById('up-pet').style.display = 'none';
-                document.getElementById('pet-status').style.display = 'block';
+                document.getElementById('btn-pet').style.display = 'none';
+                document.getElementById('pet-active').style.display = 'block';
             }
         }
 
-        // Клик по алмазу
         document.getElementById('main-diamond').onclick = (e) => {
             crystals += pickaxeLevel;
             spawnText(e.clientX, e.clientY, `+${pickaxeLevel}`);
             updateUI();
-            
-            // Автосохранение каждые 10 кликов
             if(crystals % 10 === 0) save();
         };
 
@@ -189,8 +167,6 @@
                 pickaxeLevel++;
                 updateUI();
                 save();
-            } else {
-                tg.HapticFeedback.notificationOccurred('error');
             }
         }
 
@@ -203,7 +179,7 @@
             }
         }
 
-        // Логика пассивного дохода от питомца
+        // Пассивный доход
         setInterval(() => {
             if(hasPet) {
                 crystals += 2;
@@ -211,7 +187,7 @@
             }
         }, 1000);
 
-        // Сохранение в облако
+        // СОХРАНЕНИЕ В МОНГО
         async function save() {
             try {
                 await fetch('/save-stats', {
@@ -219,15 +195,10 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ userId, crystals, pickaxeLevel, hasPet })
                 });
-            } catch(e) {
-                console.error("Ошибка при сохранении в облако");
-            }
+            } catch(e) { console.error("Ошибка сохранения"); }
         }
 
-        // Сохраняем перед выходом
         window.addEventListener('beforeunload', save);
-        
-        // Первый запуск
         load();
     </script>
 </body>
