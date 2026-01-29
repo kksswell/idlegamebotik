@@ -12,33 +12,31 @@ const db = low(adapter);
 db.defaults({ users: [] }).write();
 
 const app = express();
-app.use(express.json()); // Позволяет серверу принимать JSON
+app.use(express.json()); 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Раздача статических файлов (HTML, JS, CSS)
+// Раздача файлов игры
 app.use(express.static(__dirname));
 
 /**
- * МАРШРУТЫ ДЛЯ СИНХРОНИЗАЦИИ ИГРОКОВ
+ * ЛОГИКА БАЗЫ ДАННЫХ
  */
 
-// 1. Получить данные конкретного игрока
+// Получить данные игрока (по ID из Telegram)
 app.get('/get-stats', (req, res) => {
     const userId = req.query.userId;
-    if (!userId) return res.status(400).json({ error: 'No userId provided' });
+    if (!userId) return res.status(400).json({ error: 'No userId' });
 
     let user = db.get('users').find({ id: userId }).value();
     
-    // Если игрока еще нет в базе, создаем его с 0 кристаллов
     if (!user) {
         user = { id: userId, crystals: 0 };
         db.get('users').push(user).write();
-        console.log(`Новый игрок зарегистрирован: ${userId}`);
     }
     res.json(user);
 });
 
-// 2. Сохранить прогресс конкретного игрока
+// Сохранить прогресс
 app.post('/save-stats', (req, res) => {
     const { userId, crystals } = req.body;
     if (!userId) return res.status(400).json({ error: 'No userId' });
@@ -48,26 +46,22 @@ app.post('/save-stats', (req, res) => {
       .assign({ crystals: crystals })
       .write();
     
-    res.json({ status: 'success' });
+    res.json({ status: 'ok' });
 });
 
-// Главная страница игры
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Настройка бота
 bot.start((ctx) => {
-    ctx.reply('💎 Добро пожаловать! Твой прогресс сохраняется автоматически.', {
+    ctx.reply('💎 Прогресс синхронизирован!', {
         reply_markup: {
-            inline_keyboard: [
-                [{ text: "Играть 🎮", web_app: { url: process.env.WEBAPP_URL } }]
-            ]
+            inline_keyboard: [[{ text: "Играть 🎮", web_app: { url: process.env.WEBAPP_URL } }]]
         }
     });
 });
 
-bot.launch().catch(err => console.error("Ошибка бота:", err));
+bot.launch().catch(err => console.error("Ошибка:", err));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {

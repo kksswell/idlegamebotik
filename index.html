@@ -1,76 +1,54 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Glass Empire</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #0f0f0f; color: white; text-align: center; font-family: 'Segoe UI', sans-serif; user-select: none; }
-        .container { margin-top: 50px; }
-        #crystal { width: 180px; cursor: pointer; transition: transform 0.05s; }
-        #crystal:active { transform: scale(0.95); }
-        .score { font-size: 32px; font-weight: bold; margin: 20px 0; color: #00d4ff; }
+        body { background: #121212; color: #00d4ff; text-align: center; font-family: 'Arial', sans-serif; }
+        .stat-box { font-size: 28px; margin: 30px; padding: 10px; border: 2px solid #00d4ff; display: inline-block; border-radius: 15px; }
+        #crystal { width: 200px; cursor: pointer; filter: drop-shadow(0 0 10px #00d4ff); transition: 0.1s; }
+        #crystal:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <div class="score">💎 <span id="count">0</span></div>
-        <img id="crystal" src="https://cdn-icons-png.flaticon.com/512/3209/3209943.png" alt="Кристалл">
-    </div>
+    <div class="stat-box">💎 Кристаллы: <span id="count">0</span></div>
+    <br>
+    <img id="crystal" src="https://cdn-icons-png.flaticon.com/512/3209/3209943.png">
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Развернуть на весь экран
+        tg.expand();
 
         let crystals = 0;
-        // Получаем реальный ID игрока из Telegram
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest';
+        // Получаем уникальный ID от Телеграма
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest_user';
 
-        const countElement = document.getElementById('count');
-
-        // 1. Загрузка данных при входе в игру
-        async function loadData() {
-            try {
-                const response = await fetch(`/get-stats?userId=${userId}`);
-                const data = await response.json();
-                crystals = data.crystals || 0;
-                countElement.innerText = crystals;
-            } catch (err) {
-                console.error("Ошибка загрузки данных");
-            }
+        async function load() {
+            const res = await fetch(`/get-stats?userId=${userId}`);
+            const data = await res.json();
+            crystals = data.crystals || 0;
+            document.getElementById('count').innerText = crystals;
         }
 
-        // 2. Клик по кристаллу
+        async function save() {
+            await fetch('/save-stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, crystals })
+            });
+        }
+
         document.getElementById('crystal').onclick = () => {
             crystals++;
-            countElement.innerText = crystals;
-
-            // Сохраняем каждые 10 кликов, чтобы не перегружать сервер
-            if (crystals % 10 === 0) {
-                saveData();
-            }
+            document.getElementById('count').innerText = crystals;
+            if (crystals % 10 === 0) save(); // Сохраняем каждые 10 кликов
         };
 
-        // 3. Функция сохранения данных
-        async function saveData() {
-            try {
-                await fetch('/save-stats', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, crystals })
-                });
-            } catch (err) {
-                console.error("Ошибка сохранения данных");
-            }
-        }
-
-        // Сохраняем прогресс, когда игрок закрывает приложение
-        window.addEventListener('beforeunload', saveData);
-
-        // Запускаем загрузку
-        loadData();
+        // Сохраняем при выходе
+        window.addEventListener('beforeunload', save);
+        load();
     </script>
 </body>
 </html>
