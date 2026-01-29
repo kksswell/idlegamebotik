@@ -4,7 +4,7 @@ const path = require('path');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 
-// Настройка базы данных
+// База данных
 const adapter = new FileSync('db.json');
 const db = low(adapter);
 db.defaults({ users: [] }).write();
@@ -12,17 +12,23 @@ db.defaults({ users: [] }).write();
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Указываем серверу, что файлы лежат в той же папке, что и этот скрипт
+// Раздача статики
 app.use(express.static(__dirname));
 
-// Главный маршрут, который отдаёт твою игру
+// Маршрут для игры с проверкой пути
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    const indexPath = path.join(__dirname, 'index.html');
+    console.log("Попытка найти index.html по пути:", indexPath);
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error("Ошибка: Файл index.html не найден в корне проекта!");
+            res.status(404).send("Файл игры не найден на сервере. Проверь структуру папок.");
+        }
+    });
 });
 
-// Обработка команды /start в Telegram
 bot.start((ctx) => {
-    ctx.reply('💎 Добро пожаловать в Glass Empire!', {
+    ctx.reply('💎 Твоя империя ждет!', {
         reply_markup: {
             inline_keyboard: [
                 [{ text: "Играть 🎮", web_app: { url: process.env.WEBAPP_URL } }]
@@ -31,11 +37,12 @@ bot.start((ctx) => {
     });
 });
 
-// Запуск бота
-bot.launch().then(() => console.log('Бот запущен!'));
+// Запуск бота с обработкой ошибок (чтобы не падал при конфликтах)
+bot.launch()
+    .then(() => console.log('✅ Бот успешно запущен'))
+    .catch((err) => console.error('❌ Ошибка запуска бота:', err.message));
 
-// ВАЖНО: Порт для Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Сервер работает на порту ${PORT}`);
+    console.log(`🚀 Сервер активен на порту ${PORT}`);
 });
