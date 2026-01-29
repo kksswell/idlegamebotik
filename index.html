@@ -2,86 +2,173 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Жидкое Стекло</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Liquid Glass Empire</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.2);
+            --accent: #00d4ff;
+        }
+
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Более яркий градиент */
-            color: #fff;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            color: white;
             height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             overflow: hidden;
+            user-select: none;
         }
+
+        /* Шапка с балансом */
         header {
+            margin-top: 30px;
             text-align: center;
-            padding: 20px;
+            z-index: 10;
         }
-        .score-board {
-            font-size: 24px;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px rgba(0,212,255,0.8);
+
+        .balance-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            padding: 15px 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            margin: 10px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+
+        .balance-card h2 {
+            margin: 0;
+            font-size: 32px;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
         }
-        .diamond-container {
+
+        /* Центральная зона клика */
+        .click-zone {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            width: 100%;
+        }
+
+        #diamond {
+            width: 220px;
+            height: 220px;
             cursor: pointer;
-            transition: transform 0.1s;
+            transition: transform 0.05s ease;
+            filter: drop-shadow(0 0 30px var(--accent));
+            z-index: 5;
         }
-        .diamond-container:active {
+
+        #diamond:active {
             transform: scale(0.9);
         }
-        /* Используем иконку кристалла, так как ссылка на imgur может не работать напрямую */
-        .diamond {
-            width: 150px;
-            height: 150px;
-            background: url('https://cdn-icons-png.flaticon.com/512/3209/3209943.png') no-repeat center center;
-            background-size: contain;
-            margin: 0 auto;
-            filter: drop-shadow(0 0 15px rgba(255,255,255,0.5));
+
+        /* Анимация вылетающих цифр */
+        .floating-text {
+            position: absolute;
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 24px;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 100;
         }
-        .button {
-            display: inline-block;
-            padding: 12px 25px;
-            margin: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-150px); opacity: 0; }
+        }
+
+        /* Рюкзак и магазин */
+        .inventory {
+            width: 90%;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 25px 25px 0 0;
+            padding: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .card span { font-size: 14px; color: #ccc; }
+        .card h4 { margin: 5px 0; font-size: 16px; }
+
+        .buy-btn {
+            background: var(--accent);
+            border: none;
+            color: #000;
+            padding: 10px;
             border-radius: 10px;
-            color: white;
+            font-weight: bold;
+            width: 100%;
             cursor: pointer;
-            transition: 0.3s;
+            margin-top: 10px;
         }
-        .button:hover {
-            background: rgba(255, 255, 255, 0.4);
+
+        .buy-btn:disabled {
+            background: #444;
+            color: #888;
+        }
+
+        .status-tag {
+            font-size: 11px;
+            color: #00ffaa;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
+
     <header>
-        <h1>Жидкое Стекло</h1>
-        <div class="score-board">💎 Кристаллы: <span id="count">0</span></div>
-        <div class="diamond-container" id="click-zone">
-            <div class="diamond"></div>
+        <div class="balance-card">
+            <h2 id="crystal-count">0</h2>
+            <span id="income-info">Клик: +1</span>
         </div>
     </header>
 
-    <div class="glass">
-        <h3>Улучшения</h3>
-        <button class="button" onclick="alert('Скоро!')">Буст 1</button>
-        <button class="button" onclick="alert('Скоро!')">Буст 2</button>
-        <button class="button" onclick="alert('В разработке')">Лидерборд</button>
+    <div class="click-zone" id="main-area">
+        <img id="diamond" src="https://cdn-icons-png.flaticon.com/512/3209/3209943.png" alt="ALMAZ">
+    </div>
+
+    <div class="inventory">
+        <h3 style="margin: 0; font-size: 18px;">🎒 Магазин предметов</h3>
+        <div class="shop-grid">
+            <div class="card">
+                <span>Инструмент</span>
+                <h4>Кирка (ур. <span id="p-lvl">1</span>)</h4>
+                <button class="buy-btn" id="btn-pick" onclick="upgradePick()">Улучшить: <span id="p-cost">50</span></button>
+            </div>
+            <div class="card">
+                <span>Спутник</span>
+                <h4>Питомец-бот</h4>
+                <button class="buy-btn" id="btn-pet" onclick="buyPet()">Купить: 500</button>
+                <div id="pet-active" class="status-tag" style="display:none;">🐾 Собирает +2/сек</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -89,48 +176,89 @@
         tg.expand();
 
         let crystals = 0;
-        // Получаем ID пользователя
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest';
+        let pickaxeLevel = 1;
+        let hasPet = false;
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'dev_user';
 
-        // Загрузка данных
-        async function loadStats() {
+        // Загрузка
+        async function loadData() {
             try {
-                const res = await fetch(`/get-stats?userId=${userId}`);
-                const data = await res.json();
-                crystals = data.crystals || 0;
-                document.getElementById('count').innerText = crystals;
-            } catch (e) {
-                console.error("Ошибка загрузки данных");
+                const r = await fetch(`/get-stats?userId=${userId}`);
+                const d = await r.json();
+                crystals = d.crystals || 0;
+                pickaxeLevel = d.pickaxeLevel || 1;
+                hasPet = d.hasPet || false;
+                updateUI();
+            } catch(e) { console.error("Load error"); }
+        }
+
+        function updateUI() {
+            document.getElementById('crystal-count').innerText = `💎 ${Math.floor(crystals)}`;
+            document.getElementById('income-info').innerText = `Клик: +${pickaxeLevel}`;
+            document.getElementById('p-lvl').innerText = pickaxeLevel;
+            document.getElementById('p-cost').innerText = pickaxeLevel * 50;
+            
+            if(hasPet) {
+                document.getElementById('btn-pet').style.display = 'none';
+                document.getElementById('pet-active').style.display = 'block';
             }
         }
 
-        // Клик по кристаллу
-        document.getElementById('click-zone').onclick = () => {
-            crystals++;
-            document.getElementById('count').innerText = crystals;
-            
-            // Сохраняем каждые 10 кликов
-            if (crystals % 10 === 0) saveStats();
+        // Клик с анимацией
+        document.getElementById('diamond').onclick = (e) => {
+            crystals += pickaxeLevel;
+            showFloatingText(e.clientX, e.clientY, `+${pickaxeLevel}`);
+            updateUI();
+            if(crystals % 10 === 0) saveData();
         };
 
-        // Сохранение данных
-        async function saveStats() {
-            try {
-                await fetch('/save-stats', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, crystals })
-                });
-            } catch (e) {
-                console.error("Ошибка сохранения");
+        function showFloatingText(x, y, text) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = text;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
+        function upgradePick() {
+            const cost = pickaxeLevel * 50;
+            if(crystals >= cost) {
+                crystals -= cost;
+                pickaxeLevel++;
+                updateUI();
+                saveData();
+            } else { tg.HapticFeedback.notificationOccurred('error'); }
+        }
+
+        function buyPet() {
+            if(crystals >= 500 && !hasPet) {
+                crystals -= 500;
+                hasPet = true;
+                updateUI();
+                saveData();
             }
         }
 
-        // Автосохранение при закрытии
-        window.addEventListener('beforeunload', saveStats);
+        // Авто-доход от питомца
+        setInterval(() => {
+            if(hasPet) {
+                crystals += 2;
+                updateUI();
+            }
+        }, 1000);
 
-        // Инициализация
-        loadStats();
+        async function saveData() {
+            await fetch('/save-stats', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId, crystals, pickaxeLevel, hasPet })
+            });
+        }
+
+        window.addEventListener('beforeunload', saveData);
+        loadData();
     </script>
 </body>
 </html>
