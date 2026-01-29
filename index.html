@@ -13,25 +13,15 @@
         }
 
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', Roboto, sans-serif;
             background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
-            color: white;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow: hidden;
-            user-select: none;
+            color: white; height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            overflow: hidden; user-select: none;
         }
 
-        /* Шапка с балансом */
-        header {
-            margin-top: 30px;
-            text-align: center;
-            z-index: 10;
-        }
+        header { margin-top: 30px; text-align: center; z-index: 10; }
 
         .balance-card {
             background: var(--glass);
@@ -43,41 +33,34 @@
         }
 
         .balance-card h2 {
-            margin: 0;
-            font-size: 32px;
+            margin: 0; font-size: 32px;
             color: var(--accent);
             text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
         }
 
-        /* Центральная зона клика */
         .click-zone {
             flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; width: 100%;
         }
 
+        /* ТВОЙ НОВЫЙ АЛМАЗ */
         #diamond {
-            width: 220px;
-            height: 220px;
+            width: 250px; /* Немного увеличил размер */
+            height: 250px;
             cursor: pointer;
             transition: transform 0.05s ease;
-            filter: drop-shadow(0 0 30px var(--accent));
+            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.3));
             z-index: 5;
+            object-fit: contain;
         }
 
-        #diamond:active {
-            transform: scale(0.9);
-        }
+        #diamond:active { transform: scale(0.9); }
 
-        /* Анимация вылетающих цифр */
         .floating-text {
             position: absolute;
             color: var(--accent);
-            font-weight: bold;
-            font-size: 24px;
+            font-weight: bold; font-size: 24px;
             pointer-events: none;
             animation: floatUp 0.8s ease-out forwards;
             z-index: 100;
@@ -88,7 +71,6 @@
             100% { transform: translateY(-150px); opacity: 0; }
         }
 
-        /* Рюкзак и магазин */
         .inventory {
             width: 90%;
             background: var(--glass);
@@ -96,49 +78,25 @@
             border-radius: 25px 25px 0 0;
             padding: 20px;
             border: 1px solid var(--border);
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
         }
 
-        .shop-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-        }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
 
         .card {
             background: rgba(0, 0, 0, 0.4);
-            padding: 15px;
-            border-radius: 15px;
-            border: 1px solid var(--border);
-            text-align: center;
+            padding: 15px; border-radius: 15px;
+            border: 1px solid var(--border); text-align: center;
         }
-
-        .card span { font-size: 14px; color: #ccc; }
-        .card h4 { margin: 5px 0; font-size: 16px; }
 
         .buy-btn {
             background: var(--accent);
-            border: none;
-            color: #000;
-            padding: 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-            margin-top: 10px;
+            border: none; color: #000;
+            padding: 10px; border-radius: 10px;
+            font-weight: bold; width: 100%;
+            cursor: pointer; margin-top: 10px;
         }
 
-        .buy-btn:disabled {
-            background: #444;
-            color: #888;
-        }
-
-        .status-tag {
-            font-size: 11px;
-            color: #00ffaa;
-            margin-top: 5px;
-        }
+        .buy-btn:disabled { background: #444; color: #888; }
     </style>
 </head>
 <body>
@@ -151,11 +109,11 @@
     </header>
 
     <div class="click-zone" id="main-area">
-        <img id="diamond" src="https://cdn-icons-png.flaticon.com/512/3209/3209943.png" alt="ALMAZ">
+        <img id="diamond" src="https://image2url.com/r2/default/images/1769705456322-a956c7ca-9d21-4378-8e05-0a6aa4e8eb86.png" alt="CRYSTAL">
     </div>
 
     <div class="inventory">
-        <h3 style="margin: 0; font-size: 18px;">🎒 Магазин предметов</h3>
+        <h3 style="margin: 0; font-size: 18px;">🎒 Склад и Улучшения</h3>
         <div class="shop-grid">
             <div class="card">
                 <span>Инструмент</span>
@@ -164,9 +122,9 @@
             </div>
             <div class="card">
                 <span>Спутник</span>
-                <h4>Питомец-бот</h4>
+                <h4>Питомец</h4>
                 <button class="buy-btn" id="btn-pet" onclick="buyPet()">Купить: 500</button>
-                <div id="pet-active" class="status-tag" style="display:none;">🐾 Собирает +2/сек</div>
+                <div id="pet-active" style="display:none; color:#00ffaa; font-size:11px; margin-top:5px;">🐾 Добыча: +2/сек</div>
             </div>
         </div>
     </div>
@@ -180,7 +138,6 @@
         let hasPet = false;
         const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'dev_user';
 
-        // Загрузка
         async function loadData() {
             try {
                 const r = await fetch(`/get-stats?userId=${userId}`);
@@ -189,7 +146,7 @@
                 pickaxeLevel = d.pickaxeLevel || 1;
                 hasPet = d.hasPet || false;
                 updateUI();
-            } catch(e) { console.error("Load error"); }
+            } catch(e) { console.error("Ошибка загрузки"); }
         }
 
         function updateUI() {
@@ -197,14 +154,12 @@
             document.getElementById('income-info').innerText = `Клик: +${pickaxeLevel}`;
             document.getElementById('p-lvl').innerText = pickaxeLevel;
             document.getElementById('p-cost').innerText = pickaxeLevel * 50;
-            
             if(hasPet) {
                 document.getElementById('btn-pet').style.display = 'none';
                 document.getElementById('pet-active').style.display = 'block';
             }
         }
 
-        // Клик с анимацией
         document.getElementById('diamond').onclick = (e) => {
             crystals += pickaxeLevel;
             showFloatingText(e.clientX, e.clientY, `+${pickaxeLevel}`);
@@ -216,8 +171,7 @@
             const el = document.createElement('div');
             el.className = 'floating-text';
             el.innerText = text;
-            el.style.left = `${x}px`;
-            el.style.top = `${y}px`;
+            el.style.left = `${x}px`; el.style.top = `${y}px`;
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 800);
         }
@@ -241,12 +195,8 @@
             }
         }
 
-        // Авто-доход от питомца
         setInterval(() => {
-            if(hasPet) {
-                crystals += 2;
-                updateUI();
-            }
+            if(hasPet) { crystals += 2; updateUI(); }
         }, 1000);
 
         async function saveData() {
