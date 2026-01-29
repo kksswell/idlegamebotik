@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Liquid Glass Clicker</title>
+    <title>Liquid Glass Clicker: Cloud Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -14,7 +14,7 @@
 
         body {
             margin: 0; padding: 0;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
             color: white; height: 100vh;
             display: flex; flex-direction: column; align-items: center;
@@ -32,7 +32,7 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
 
-        #crystal-count { margin: 0; font-size: 36px; color: var(--accent); }
+        #crystal-count { margin: 0; font-size: 36px; color: var(--accent); font-weight: bold; }
 
         .click-area {
             flex-grow: 1;
@@ -41,11 +41,11 @@
         }
 
         #main-diamond {
-            width: 260px;
-            height: 260px;
+            width: 250px;
+            height: 250px;
             cursor: pointer;
             transition: transform 0.05s ease;
-            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.4));
+            filter: drop-shadow(0 0 25px rgba(0, 212, 255, 0.4));
             object-fit: contain;
         }
 
@@ -61,35 +61,39 @@
 
         @keyframes floatUp {
             0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-120px); opacity: 0; }
+            100% { transform: translateY(-130px); opacity: 0; }
         }
 
         .shop {
             width: 100%;
             background: var(--glass);
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(25px);
             border-radius: 30px 30px 0 0;
             padding: 20px;
             border-top: 1px solid var(--border);
             box-sizing: border-box;
         }
 
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
         .item {
-            background: rgba(0,0,0,0.3);
-            padding: 15px; border-radius: 15px;
+            background: rgba(0,0,0,0.4);
+            padding: 15px; border-radius: 18px;
             border: 1px solid var(--border); text-align: center;
         }
 
         .btn {
             background: var(--accent);
-            border: none; color: black; padding: 10px;
-            border-radius: 8px; font-weight: bold; width: 100%;
+            border: none; color: black; padding: 12px;
+            border-radius: 10px; font-weight: bold; width: 100%;
             margin-top: 10px; cursor: pointer;
+            transition: 0.2s;
         }
 
+        .btn:active { background: #008eb3; }
         .btn:disabled { background: #444; color: #888; }
+
+        .pet-tag { color: #00ffaa; font-size: 11px; margin-top: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -97,7 +101,7 @@
     <header>
         <div class="balance-card">
             <h2 id="crystal-count">0</h2>
-            <small id="per-click">Клик: +1</small>
+            <small id="per-click" style="color: #ccc;">Клик: +1</small>
         </div>
     </header>
 
@@ -108,13 +112,13 @@
     <div class="shop">
         <div class="shop-grid">
             <div class="item">
-                <span>Кирка (Ур. <span id="lvl">1</span>)</span>
-                <button class="btn" id="up-pick" onclick="upgrade()">Купить: <span id="cost">50</span></button>
+                <span style="font-size: 14px;">⛏️ Кирка (ур. <span id="lvl">1</span>)</span>
+                <button class="btn" id="up-pick" onclick="upgrade()">Апгрейд: <span id="cost">50</span></button>
             </div>
             <div class="item">
-                <span>Питомец</span>
+                <span style="font-size: 14px;">🐱 Питомец</span>
                 <button class="btn" id="up-pet" onclick="buyPet()">Купить: 500</button>
-                <div id="pet-status" style="display:none; color: #00ffaa; font-size: 11px; margin-top:5px;">🐾 Добывает: +2/с</div>
+                <div id="pet-status" class="pet-tag" style="display:none;">🐾 ПРИНОСИТ: +2/с</div>
             </div>
         </div>
     </div>
@@ -126,23 +130,24 @@
         let crystals = 0;
         let pickaxeLevel = 1;
         let hasPet = false;
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest_dev';
+        
+        // Получаем уникальный ID от Telegram
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : 'guest_player';
 
-        // 1. ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА ПРИ СТАРТЕ
-        async function loadData() {
+        // Загрузка данных из облака
+        async function load() {
             try {
                 const response = await fetch(`/get-stats?userId=${userId}`);
                 const data = await response.json();
                 
-                // Присваиваем значения из базы
                 crystals = data.crystals || 0;
                 pickaxeLevel = data.pickaxeLevel || 1;
                 hasPet = data.hasPet || false;
                 
                 updateUI();
-                console.log("Данные загружены:", data);
+                console.log("Данные из MongoDB загружены");
             } catch(e) {
-                console.error("Ошибка загрузки:", e);
+                console.error("Ошибка сети при загрузке");
             }
         }
 
@@ -158,14 +163,14 @@
             }
         }
 
-        // Клик
+        // Клик по алмазу
         document.getElementById('main-diamond').onclick = (e) => {
             crystals += pickaxeLevel;
             spawnText(e.clientX, e.clientY, `+${pickaxeLevel}`);
             updateUI();
             
-            // Сохраняем каждый 10-й клик автоматически
-            if(crystals % 10 === 0) saveData();
+            // Автосохранение каждые 10 кликов
+            if(crystals % 10 === 0) save();
         };
 
         function spawnText(x, y, text) {
@@ -183,7 +188,9 @@
                 crystals -= price;
                 pickaxeLevel++;
                 updateUI();
-                saveData();
+                save();
+            } else {
+                tg.HapticFeedback.notificationOccurred('error');
             }
         }
 
@@ -192,11 +199,11 @@
                 crystals -= 500;
                 hasPet = true;
                 updateUI();
-                saveData();
+                save();
             }
         }
 
-        // Авто-доход
+        // Логика пассивного дохода от питомца
         setInterval(() => {
             if(hasPet) {
                 crystals += 2;
@@ -204,29 +211,24 @@
             }
         }, 1000);
 
-        // 2. ФУНКЦИЯ СОХРАНЕНИЯ
-        async function saveData() {
+        // Сохранение в облако
+        async function save() {
             try {
                 await fetch('/save-stats', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        userId, 
-                        crystals, 
-                        pickaxeLevel, 
-                        hasPet 
-                    })
+                    body: JSON.stringify({ userId, crystals, pickaxeLevel, hasPet })
                 });
             } catch(e) {
-                console.error("Ошибка сохранения:", e);
+                console.error("Ошибка при сохранении в облако");
             }
         }
 
-        // Сохранение при выходе
-        window.addEventListener('beforeunload', saveData);
+        // Сохраняем перед выходом
+        window.addEventListener('beforeunload', save);
         
-        // Запуск
-        loadData();
+        // Первый запуск
+        load();
     </script>
 </body>
 </html>
